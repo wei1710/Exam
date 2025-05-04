@@ -7,7 +7,7 @@ namespace Src\Logging;
  * @param $info An undefined series of strings or arrays to log
  */
 
-Class Logger
+class Logger
 {
   private const LOG_DIRECTORY = __DIR__ . '/../log';
 
