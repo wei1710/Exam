@@ -551,6 +551,83 @@ function handlePlaylist(string $method, array $parts): void
 {
   $playlistModel = new Playlist();
 
+  // POST /playlists → Create playlist
+  if ($method === 'POST' && empty($parts)) {
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['name']) || trim($input['name']) === '') {
+      http_response_code(400);
+      echo json_encode(['error' => 'Missing or empty name']);
+      return;
+    }
+
+    $newPlaylist = $playlistModel->create($input['name']);
+
+    if ($newPlaylist === false) {
+      http_response_code(500);
+      echo json_encode(['error' => 'Failed to create playlist']);
+    } else {
+      http_response_code(201);
+      echo json_encode($newPlaylist);
+    }
+    return;
+  }
+
+  // POST /playlists/{id}/tracks → Assign track to playlist
+  if ($method === 'POST' && count($parts) === 2 && is_numeric($parts[0]) && $parts[1] === 'tracks') {
+    $playlistId = (int)$parts[0];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['track_id']) || !is_numeric($input['track_id'])) {
+      http_response_code(400);
+      echo json_encode(['error' => 'Missing or invalid track_id']);
+      return;
+    }
+
+    $trackId = (int)$input['track_id'];
+    $success = $playlistModel->addTrack($playlistId, $trackId);
+
+    if ($success) {
+      http_response_code(201);
+      echo json_encode(['message' => "Track {$trackId} added to playlist {$playlistId}"]);
+    } else {
+      http_response_code(500);
+      echo json_encode(['error' => "Failed to add track {$trackId} to playlist {$playlistId}"]);
+    }
+    return;
+  }
+
+  // GET /playlists/{id} → One playlist with tracks
+  if ($method === 'GET' && count($parts) === 1 && is_numeric($parts[0])) {
+    $playlistId = (int)$parts[0];
+    $playlist = $playlistModel->get($playlistId);
+
+    if ($playlist === false) {
+      http_response_code(404);
+      echo json_encode(['error' => "Playlist with ID {$playlistId} not found or has no tracks."]);
+    } else {
+      http_response_code(200);
+      echo json_encode($playlist);
+    }
+    return;
+  }
+
+  // GET /playlists?s=... → Search playlists
+  if ($method === 'GET' && isset($_GET['s']) && empty($parts)) {
+    $searchQuery = $_GET['s'];
+    $playlists = $playlistModel->search($searchQuery);
+
+    if ($playlists === false || empty($playlists)) {
+      http_response_code(404);
+      echo json_encode(['error' => "No playlists found matching '{$searchQuery}'"]);
+    } else {
+      http_response_code(200);
+      echo json_encode($playlists);
+    }
+    return;
+  }
+
+  // GET /playlists → All playlists
   if ($method === 'GET' && empty($parts)) {
     $playlists = $playlistModel->getAll();
 
@@ -561,8 +638,49 @@ function handlePlaylist(string $method, array $parts): void
       http_response_code(200);
       echo json_encode($playlists);
     }
-  } else {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed or invalid path']);
+    return;
   }
+
+
+  // DELETE /playlists/{playlist_id}/tracks/{track_id}
+  if ($method === 'DELETE' && count($parts) === 3 && is_numeric($parts[0]) && $parts[1] === 'tracks' && is_numeric($parts[2])) {
+    $playlistId = (int)$parts[0];
+    $trackId = (int)$parts[2];
+
+    $success = $playlistModel->removeTrack($playlistId, $trackId);
+
+    if ($success) {
+      http_response_code(200);
+      echo json_encode(['message' => "Track {$trackId} removed from playlist {$playlistId}"]);
+    } else {
+      http_response_code(500);
+      echo json_encode(['error' => "Failed to remove track {$trackId} from playlist {$playlistId}"]);
+    }
+    return;
+  }
+
+  // DELETE /playlists/{id}
+  if ($method === 'DELETE' && count($parts) === 1 && is_numeric($parts[0])) {
+    $playlistId = (int)$parts[0];
+
+    if ($playlistModel->hasPlaylistTracks($playlistId)) {
+      http_response_code(400);
+      echo json_encode(['error' => "Playlist {$playlistId} cannot be deleted because it contains tracks."]);
+      return;
+    }
+
+    $success = $playlistModel->delete($playlistId);
+
+    if ($success) {
+      http_response_code(200);
+      echo json_encode(['message' => "Playlist {$playlistId} deleted successfully."]);
+    } else {
+      http_response_code(500);
+      echo json_encode(['error' => "Failed to delete playlist {$playlistId}"]);
+    }
+    return;
+  }
+  // Invalid method or path
+  http_response_code(405);
+  echo json_encode(['error' => 'Method not allowed or invalid path']);
 }
