@@ -12,6 +12,4 @@ Class PlaylistTrack extends DBConnection
   {
     parent::__construct();
   }
-
-  
 }

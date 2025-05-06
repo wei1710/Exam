@@ -41,39 +41,6 @@ class Album extends DBConnection
     }
   }
 
-  public function search(string $title): array|false
-  {
-    $sql = <<<SQL
-        SELECT
-            Album.AlbumId,
-            Album.Title,
-            Album.ArtistId,
-            Artist.Name AS ArtistName
-        FROM
-            Album
-        INNER JOIN
-            Artist ON Album.ArtistId = Artist.ArtistId
-        WHERE
-            Album.Title LIKE :title_search
-        ORDER BY
-            Album.Title
-      SQL;
-
-    try {
-      $stmt = $this->pdo->prepare($sql);
-      $searchTerm = '%' . $title . '%';
-      $stmt->bindParam(':title_search', $searchTerm, \PDO::PARAM_STR);
-      $stmt->execute();
-
-      $albums = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-      return $albums;
-    } catch (\PDOException $e) {
-      Logger::logText("Error getting albums with Title {$title}: ", $e->getMessage());
-      return false;
-    }
-  }
-
   public function get(int $albumId): array|false
   {
     $sql = <<<SQL
@@ -104,6 +71,39 @@ class Album extends DBConnection
       return $album;
     } catch (\PDOException $e) {
       Logger::logText("Error getting album with ID {$albumId}: ", $e->getMessage());
+      return false;
+    }
+  }
+
+  public function search(string $title): array|false
+  {
+    $sql = <<<SQL
+        SELECT
+            Album.AlbumId,
+            Album.Title,
+            Album.ArtistId,
+            Artist.Name AS ArtistName
+        FROM
+            Album
+        INNER JOIN
+            Artist ON Album.ArtistId = Artist.ArtistId
+        WHERE
+            Album.Title LIKE :title_search
+        ORDER BY
+            Album.Title
+      SQL;
+
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $searchTerm = '%' . $title . '%';
+      $stmt->bindParam(':title_search', $searchTerm, \PDO::PARAM_STR);
+      $stmt->execute();
+
+      $albums = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+      return $albums;
+    } catch (\PDOException $e) {
+      Logger::logText("Error getting albums with Title {$title}: ", $e->getMessage());
       return false;
     }
   }
