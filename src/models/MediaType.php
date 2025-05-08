@@ -5,7 +5,7 @@ namespace Src\Models;
 
 use Src\Models\BaseModel;
 
-Class MediaType extends BaseModel
+class MediaType extends BaseModel
 {
   public function getTableName(): string
   {

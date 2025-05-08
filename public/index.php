@@ -1,8 +1,11 @@
 <?php
 header('Content-Type: application/json; charset=UTF-8');
 
+require_once __DIR__ . '/../src/http/HttpStatusCodes.php';
+
+require_once __DIR__ . '/../src/logging/Logger.php';
+
 require_once __DIR__ . '/../src/DBConnection.php';
-require_once __DIR__ . '/../src/Logging/Logger.php';
 require_once __DIR__ . '/../src/models/BaseModel.php';
 
 require_once __DIR__ . '/../src/models/IAlbum.php';
@@ -14,14 +17,14 @@ require_once __DIR__ . '/../src/models/Playlist.php';
 require_once __DIR__ . '/../src/models/MediaType.php';
 require_once __DIR__ . '/../src/models/Genre.php';
 
+use Src\Http\HttpStatusCodes;
+
 use Src\models\Album;
-use Src\Models\IAlbum;
 use Src\models\Track;
 use Src\models\Artist;
 use Src\models\Playlist;
 use Src\models\MediaType;
 use Src\models\Genre;
-use Src\Logging\Logger;
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -63,7 +66,7 @@ switch ($resource) {
     break;
 
   default:
-    http_response_code(404);
+    http_response_code(HttpStatusCodes::NOT_FOUND);
     echo json_encode(['error' => 'Resource not found']);
     break;
 }
@@ -79,13 +82,13 @@ function handleArtist(string $method, array $parts): void
 
     $artist = $artistModel->get($artistId);
     if ($artist === false) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Artist with ID {$artistId} not found."]);
       return;
     }
 
     if ($albumModel->hasAlbums($artistId)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::CONFLICT);
       echo json_encode(['error' => "Cannot delete artist {$artistId} because they have albums."]);
       return;
     }
@@ -93,10 +96,10 @@ function handleArtist(string $method, array $parts): void
     $success = $artistModel->delete($artistId);
 
     if ($success) {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode(['message' => "Artist {$artistId} deleted successfully."]);
     } else {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Failed to delete artist {$artistId}."]);
     }
     return;
@@ -107,7 +110,7 @@ function handleArtist(string $method, array $parts): void
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!isset($input['name']) || trim($input['name']) === '') {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Missing or empty artist name']);
       return;
     }
@@ -116,10 +119,10 @@ function handleArtist(string $method, array $parts): void
     $artist = $artistModel->create($name);
 
     if ($artist === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to create artist']);
     } else {
-      http_response_code(201);
+      http_response_code(HttpStatusCodes::CREATED);
       echo json_encode($artist);
     }
     return;
@@ -134,10 +137,10 @@ function handleArtist(string $method, array $parts): void
       $artists = $artistModel->search($searchQuery);
 
       if ($artists === false || empty($artists)) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "No artists found matching '{$searchQuery}'"]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($artists);
       }
 
@@ -146,7 +149,7 @@ function handleArtist(string $method, array $parts): void
       $artistId = (int)$parts[0];
 
       if ($artistModel->get($artistId) === false) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "Artist with ID {$artistId} not found."]);
         return;
       }
@@ -154,10 +157,10 @@ function handleArtist(string $method, array $parts): void
       $albums = $albumModel->getByArtistId($artistId);
 
       if ($albums === false || empty($albums)) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "No albums found for artist ID {$artistId}."]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($albums);
       }
 
@@ -167,10 +170,10 @@ function handleArtist(string $method, array $parts): void
       $artist = $artistModel->get($artistId);
 
       if ($artist === false) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "Artist with ID {$artistId} not found."]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($artist);
       }
 
@@ -179,18 +182,18 @@ function handleArtist(string $method, array $parts): void
       $artists = $artistModel->getAll();
 
       if ($artists === false) {
-        http_response_code(500);
+        http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
         echo json_encode(['error' => 'Failed to retrieve artists']);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($artists);
       }
     } else {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Invalid request path for artists']);
     }
   } else {
-    http_response_code(405);
+    http_response_code(HttpStatusCodes::METHOD_NOT_ALLOWED);
     echo json_encode(['error' => 'Method not allowed for artists']);
   }
 }
@@ -208,7 +211,7 @@ function handleAlbum(string $method, array $parts): void
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!isset($input['title'], $input['artist_id'])) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Missing title or artist_id']);
       return;
     }
@@ -217,7 +220,7 @@ function handleAlbum(string $method, array $parts): void
     $artistId = (int)$input['artist_id'];
 
     if ($title === '' || $artistId <= 0) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Invalid title or artist_id']);
       return;
     }
@@ -225,10 +228,10 @@ function handleAlbum(string $method, array $parts): void
     $newAlbum = $albumModel->create($title, $artistId);
 
     if ($newAlbum === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to create album']);
     } else {
-      http_response_code(201);
+      http_response_code(HttpStatusCodes::CREATED);
       echo json_encode($newAlbum);
     }
     return;
@@ -240,14 +243,14 @@ function handleAlbum(string $method, array $parts): void
     $album = $albumModel->get($albumId);
 
     if ($album === false) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Album with ID {$albumId} not found."]);
       return;
     }
 
     $input = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => 'Invalid JSON']);
       return;
     }
@@ -256,7 +259,7 @@ function handleAlbum(string $method, array $parts): void
     $artistId = isset($input['artist_id']) ? (int)$input['artist_id'] : null;
 
     if (($title === null || $title === '') && ($artistId === null || $artistId <= 0)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'No valid fields to update']);
       return;
     }
@@ -264,10 +267,10 @@ function handleAlbum(string $method, array $parts): void
     $updatedAlbum = $albumModel->update($albumId, $title, $artistId);
 
     if ($updatedAlbum === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to update album']);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($updatedAlbum);
     }
     return;
@@ -279,13 +282,13 @@ function handleAlbum(string $method, array $parts): void
 
     $album = $albumModel->get($albumId);
     if ($album === false) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Album with ID {$albumId} not found."]);
       return;
     }
 
     if ($trackModel->hasTracks($albumId)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::CONFLICT);
       echo json_encode(['error' => "Album ID {$albumId} cannot be deleted because it has tracks."]);
       return;
     }
@@ -293,10 +296,10 @@ function handleAlbum(string $method, array $parts): void
     $success = $albumModel->delete($albumId);
 
     if ($success) {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode(['message' => "Album ID {$albumId} deleted successfully."]);
     } else {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => "Failed to delete album ID {$albumId}."]);
     }
     return;
@@ -311,10 +314,10 @@ function handleAlbum(string $method, array $parts): void
       $albums = $albumModel->search($searchQuery);
 
       if ($albums === false) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "Album with title '{$searchQuery}' not found."]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($albums);
       }
 
@@ -323,13 +326,13 @@ function handleAlbum(string $method, array $parts): void
       $albums = $albumModel->getAll();
 
       if ($albums === false) {
-        http_response_code(500);
+        http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
         echo json_encode(['error' => 'Failed to retrieve albums.']);
       } elseif (empty($albums)) {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode([]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($albums);
       }
 
@@ -339,10 +342,10 @@ function handleAlbum(string $method, array $parts): void
       $album = $albumModel->get($albumId);
 
       if ($album === false) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "Album with ID {$albumId} not found."]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($album);
       }
 
@@ -352,7 +355,7 @@ function handleAlbum(string $method, array $parts): void
 
       $album = $albumModel->get($albumId);
       if ($album === false) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "Album with ID {$albumId} not found."]);
         return;
       }
@@ -360,18 +363,18 @@ function handleAlbum(string $method, array $parts): void
       $tracks = $trackModel->getTracksByAlbumId($albumId);
 
       if ($tracks === false || empty($tracks)) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "No tracks found for album ID {$albumId}."]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($tracks);
       }
     } else {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Invalid request path.']);
     }
   } else {
-    http_response_code(405);
+    http_response_code(HttpStatusCodes::METHOD_NOT_ALLOWED);
     echo json_encode(['error' => 'Method not allowed.']);
   }
 }
@@ -388,7 +391,7 @@ function handleTrack(string $method, array $parts): void
     $required = ['name', 'album_id', 'media_type_id', 'genre_id', 'composer', 'milliseconds', 'bytes', 'unit_price'];
     foreach ($required as $field) {
       if (!isset($input[$field]) || $input[$field] === '') {
-        http_response_code(400);
+        http_response_code(HttpStatusCodes::BAD_REQUEST);
         echo json_encode(['error' => "Missing or empty field: {$field}"]);
         return;
       }
@@ -397,10 +400,10 @@ function handleTrack(string $method, array $parts): void
     $track = $trackModel->create($input);
 
     if ($track === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to create track']);
     } else {
-      http_response_code(201);
+      http_response_code(HttpStatusCodes::CREATED);
       echo json_encode($track);
     }
     return;
@@ -412,7 +415,7 @@ function handleTrack(string $method, array $parts): void
 
     $existing = $trackModel->get($trackId);
     if (!$existing) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Track with ID {$trackId} not found."]);
       return;
     }
@@ -420,7 +423,7 @@ function handleTrack(string $method, array $parts): void
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!is_array($input) || empty($input)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'No fields provided for update']);
       return;
     }
@@ -428,10 +431,10 @@ function handleTrack(string $method, array $parts): void
     $updated = $trackModel->update($trackId, $input);
 
     if ($updated === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => "Failed to update track {$trackId}"]);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($updated);
     }
     return;
@@ -443,13 +446,13 @@ function handleTrack(string $method, array $parts): void
 
     $existing = $trackModel->get($trackId);
     if (!$existing) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Track with ID {$trackId} not found."]);
       return;
     }
 
     if ($playlistModel->hasTrack($trackId)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => "Cannot delete track {$trackId} because it belongs to a playlist."]);
       return;
     }
@@ -457,10 +460,10 @@ function handleTrack(string $method, array $parts): void
     $deleted = $trackModel->delete($trackId);
 
     if ($deleted) {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode(['message' => "Track {$trackId} deleted successfully."]);
     } else {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => "Failed to delete track {$trackId}."]);
     }
     return;
@@ -475,20 +478,20 @@ function handleTrack(string $method, array $parts): void
       $tracks = $trackModel->getByComposer($composerQuery);
 
       if ($tracks === false || empty($tracks)) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "No tracks found for composer '{$composerQuery}'"]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($tracks);
       }
     } elseif ($searchQuery !== null && empty($parts)) {
       $tracks = $trackModel->search($searchQuery);
 
       if ($tracks === false || empty($tracks)) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "No tracks found matching '{$searchQuery}'"]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($tracks);
       }
     } elseif (count($parts) === 1 && is_numeric($parts[0])) {
@@ -496,18 +499,18 @@ function handleTrack(string $method, array $parts): void
       $track = $trackModel->get($trackId);
 
       if ($track === false) {
-        http_response_code(404);
+        http_response_code(HttpStatusCodes::NOT_FOUND);
         echo json_encode(['error' => "Track with ID {$trackId} not found."]);
       } else {
-        http_response_code(200);
+        http_response_code(HttpStatusCodes::OK);
         echo json_encode($track);
       }
     } else {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Invalid request path for tracks']);
     }
   } else {
-    http_response_code(405);
+    http_response_code(HttpStatusCodes::METHOD_NOT_ALLOWED);
     echo json_encode(['error' => 'Method not allowed for tracks']);
   }
 }
@@ -520,14 +523,14 @@ function handleMediaType(string $method, array $parts): void
     $mediaTypes = $mediaTypeModel->getAll();
 
     if ($mediaTypes === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to retrieve media types']);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($mediaTypes);
     }
   } else {
-    http_response_code(405);
+    http_response_code(HttpStatusCodes::METHOD_NOT_ALLOWED);
     echo json_encode(['error' => 'Method not allowed or invalid path']);
   }
 }
@@ -540,14 +543,14 @@ function handleGenre(string $method, array $parts): void
     $genres = $genreModel->getAll();
 
     if ($genres === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to retrieve genres']);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($genres);
     }
   } else {
-    http_response_code(405);
+    http_response_code(HttpStatusCodes::METHOD_NOT_ALLOWED);
     echo json_encode(['error' => 'Method not allowed or invalid path']);
   }
 }
@@ -561,7 +564,7 @@ function handlePlaylist(string $method, array $parts): void
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!isset($input['name']) || trim($input['name']) === '') {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Missing or empty name']);
       return;
     }
@@ -569,10 +572,10 @@ function handlePlaylist(string $method, array $parts): void
     $newPlaylist = $playlistModel->create($input['name']);
 
     if ($newPlaylist === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to create playlist']);
     } else {
-      http_response_code(201);
+      http_response_code(HttpStatusCodes::CREATED);
       echo json_encode($newPlaylist);
     }
     return;
@@ -584,7 +587,7 @@ function handlePlaylist(string $method, array $parts): void
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!isset($input['track_id']) || !is_numeric($input['track_id'])) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::BAD_REQUEST);
       echo json_encode(['error' => 'Missing or invalid track_id']);
       return;
     }
@@ -593,10 +596,10 @@ function handlePlaylist(string $method, array $parts): void
     $success = $playlistModel->addTrack($playlistId, $trackId);
 
     if ($success) {
-      http_response_code(201);
+      http_response_code(HttpStatusCodes::CREATED);
       echo json_encode(['message' => "Track {$trackId} added to playlist {$playlistId}"]);
     } else {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => "Failed to add track {$trackId} to playlist {$playlistId}"]);
     }
     return;
@@ -608,10 +611,10 @@ function handlePlaylist(string $method, array $parts): void
     $playlist = $playlistModel->get($playlistId);
 
     if ($playlist === false) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "Playlist with ID {$playlistId} not found or has no tracks."]);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($playlist);
     }
     return;
@@ -623,10 +626,10 @@ function handlePlaylist(string $method, array $parts): void
     $playlists = $playlistModel->search($searchQuery);
 
     if ($playlists === false || empty($playlists)) {
-      http_response_code(404);
+      http_response_code(HttpStatusCodes::NOT_FOUND);
       echo json_encode(['error' => "No playlists found matching '{$searchQuery}'"]);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($playlists);
     }
     return;
@@ -637,10 +640,10 @@ function handlePlaylist(string $method, array $parts): void
     $playlists = $playlistModel->getAll();
 
     if ($playlists === false) {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => 'Failed to retrieve playlists']);
     } else {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode($playlists);
     }
     return;
@@ -655,10 +658,10 @@ function handlePlaylist(string $method, array $parts): void
     $success = $playlistModel->removeTrack($playlistId, $trackId);
 
     if ($success) {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode(['message' => "Track {$trackId} removed from playlist {$playlistId}"]);
     } else {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => "Failed to remove track {$trackId} from playlist {$playlistId}"]);
     }
     return;
@@ -669,7 +672,7 @@ function handlePlaylist(string $method, array $parts): void
     $playlistId = (int)$parts[0];
 
     if ($playlistModel->hasPlaylistTracks($playlistId)) {
-      http_response_code(400);
+      http_response_code(HttpStatusCodes::CONFLICT);
       echo json_encode(['error' => "Playlist {$playlistId} cannot be deleted because it contains tracks."]);
       return;
     }
@@ -677,15 +680,15 @@ function handlePlaylist(string $method, array $parts): void
     $success = $playlistModel->delete($playlistId);
 
     if ($success) {
-      http_response_code(200);
+      http_response_code(HttpStatusCodes::OK);
       echo json_encode(['message' => "Playlist {$playlistId} deleted successfully."]);
     } else {
-      http_response_code(500);
+      http_response_code(HttpStatusCodes::INTERNAL_SERVER_ERROR);
       echo json_encode(['error' => "Failed to delete playlist {$playlistId}"]);
     }
     return;
   }
   // Invalid method or path
-  http_response_code(405);
+  http_response_code(HttpStatusCodes::METHOD_NOT_ALLOWED);
   echo json_encode(['error' => 'Method not allowed or invalid path']);
 }

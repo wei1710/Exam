@@ -6,7 +6,7 @@ namespace Src\Models;
 use Src\DBConnection;
 use Src\Logging\Logger;
 
-Class PlaylistTrack extends DBConnection
+class PlaylistTrack extends DBConnection
 {
   public function __construct()
   {

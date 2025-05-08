@@ -5,7 +5,7 @@ namespace Src\Models;
 
 use Src\Models\BaseModel;
 
-Class Genre extends BaseModel
+class Genre extends BaseModel
 {
   public function getTableName(): string
   {

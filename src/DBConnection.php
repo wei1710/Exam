@@ -6,7 +6,7 @@ use Src\Logging\Logger;
 
 require_once 'DBCredentials.php';
 
-Class DBConnection extends DBCredentials
+class DBConnection extends DBCredentials
 {
   protected ?\PDO $pdo;
 
