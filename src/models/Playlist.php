@@ -187,7 +187,9 @@ class Playlist extends BaseModel
       try {
           $stmt = $this->pdo->prepare($sql);
           $stmt->bindParam(':playlistId', $playlistId, \PDO::PARAM_INT);
-          return $stmt->execute();
+          $stmt->execute();
+
+          return $stmt->rowCount() > 0;
       } catch (\PDOException $e) {
           $this->logError("Error deleting playlist {$playlistId}: ", $e->getMessage());
           return false;
