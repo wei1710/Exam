@@ -2,6 +2,8 @@
 
 namespace Src;
 
+use Src\Logging\Logger;
+
 require_once 'DBCredentials.php';
 
 Class DBConnection extends DBCredentials
@@ -15,8 +17,12 @@ Class DBConnection extends DBCredentials
       \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
       \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC
     ];
-    
-    $this->pdo = new \PDO($dsn, $this->user, $this->password, $options);
+    try {
+      $this->pdo = new \PDO($dsn, $this->user, $this->password, $options);
+      Logger::logText('Database connection successful');
+    } catch (\PDOException $e) {
+      Logger::logText('FATAL ERROR: Database connection failed: ', $e->getMessage());
+    }
   }
 
   public function __destruct()

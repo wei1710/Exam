@@ -2,14 +2,13 @@
 
 namespace Src\Models;
 
-use Src\DBConnection;
-use Src\Logging\Logger;
+use Src\Models\BaseModel;
 
-class Playlist extends DBConnection
+class Playlist extends BaseModel
 {
-  public function __construct()
+  public function getTableName(): string
   {
-    parent::__construct();
+    return 'Playlist';
   }
 
   public function getAll(): array|false
@@ -25,7 +24,7 @@ class Playlist extends DBConnection
       $stmt->execute();
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText("Error retrieving playlists: ", $e->getMessage());
+      $this->logError("Error retrieving playlists: ", $e->getMessage());
       return false;
     }
   }
@@ -63,7 +62,7 @@ class Playlist extends DBConnection
       $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
       if (empty($rows)) {
-        return false; // playlist not found or has no tracks
+        return false;
       }
 
       // Build result structure
@@ -93,7 +92,7 @@ class Playlist extends DBConnection
 
       return $playlist;
     } catch (\PDOException $e) {
-      Logger::logText("Error retrieving playlist with tracks: ", $e->getMessage());
+      $this->logError("Error retrieving playlist with tracks: ", $e->getMessage());
       return false;
     }
   }
@@ -115,7 +114,7 @@ class Playlist extends DBConnection
 
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText("Error searching playlists: ", $e->getMessage());
+      $this->logError("Error searching playlists: ", $e->getMessage());
       return false;
     }
   }
@@ -140,7 +139,7 @@ class Playlist extends DBConnection
               'Name' => $trimmed
           ];
       } catch (\PDOException $e) {
-          Logger::logText("Error creating playlist: ", $e->getMessage());
+          $this->logError("Error creating playlist: ", $e->getMessage());
           return false;
       }
   }
@@ -158,7 +157,7 @@ class Playlist extends DBConnection
           $stmt->bindParam(':trackId', $trackId, \PDO::PARAM_INT);
           return $stmt->execute();
       } catch (\PDOException $e) {
-          Logger::logText("Error adding track {$trackId} to playlist {$playlistId}: ", $e->getMessage());
+          $this->logError("Error adding track {$trackId} to playlist {$playlistId}: ", $e->getMessage());
           return false;
       }
   }
@@ -176,7 +175,7 @@ class Playlist extends DBConnection
           $stmt->bindParam(':trackId', $trackId, \PDO::PARAM_INT);
           return $stmt->execute();
       } catch (\PDOException $e) {
-          Logger::logText("Error removing track {$trackId} from playlist {$playlistId}: ", $e->getMessage());
+          $this->logError("Error removing track {$trackId} from playlist {$playlistId}: ", $e->getMessage());
           return false;
       }
   }
@@ -190,7 +189,7 @@ class Playlist extends DBConnection
           $stmt->bindParam(':playlistId', $playlistId, \PDO::PARAM_INT);
           return $stmt->execute();
       } catch (\PDOException $e) {
-          Logger::logText("Error deleting playlist {$playlistId}: ", $e->getMessage());
+          $this->logError("Error deleting playlist {$playlistId}: ", $e->getMessage());
           return false;
       }
   }
@@ -205,7 +204,7 @@ class Playlist extends DBConnection
           $stmt->execute();
           return $stmt->fetchColumn() > 0;
       } catch (\PDOException $e) {
-          Logger::logText("Error checking tracks in playlist {$playlistId}: ", $e->getMessage());
+          $this->logError("Error checking tracks in playlist {$playlistId}: ", $e->getMessage());
           return true;
       }
   }
@@ -221,7 +220,7 @@ class Playlist extends DBConnection
 
       return $stmt->fetchColumn() > 0;
     } catch (\PDOException $e) {
-      Logger::logText("Error checking if track {$trackId} is in a playlist: ", $e->getMessage());
+      $this->logError("Error checking if track {$trackId} is in a playlist: ", $e->getMessage());
       return true;
     }
   }

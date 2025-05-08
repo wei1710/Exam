@@ -3,14 +3,13 @@
 
 namespace Src\Models;
 
-use Src\DBConnection;
-use Src\Logging\Logger;
+use Src\Models\BaseModel;
 
-class Track extends DBConnection
+class Track extends BaseModel
 {
-  public function __construct()
+  public function getTableName(): string
   {
-    parent::__construct();
+    return 'Track';
   }
 
   public function get(int $trackId): array|false
@@ -44,13 +43,13 @@ class Track extends DBConnection
       $track = $stmt->fetch(\PDO::FETCH_ASSOC);
 
       if (!$track) {
-        Logger::logText("Track with ID {$trackId} not found.");
+        $this->logError("Track with ID {$trackId} not found.");
         return false;
       }
 
       return $track;
     } catch (\PDOException $e) {
-      Logger::logText("Error getting track with ID {$trackId}: ", $e->getMessage());
+      $this->logError("Error getting track with ID {$trackId}: ", $e->getMessage());
       return false;
     }
   }
@@ -90,7 +89,7 @@ class Track extends DBConnection
 
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText("Error searching tracks: ", $e->getMessage());
+      $this->logError("Error searching tracks: ", $e->getMessage());
       return false;
     }
   }
@@ -120,7 +119,7 @@ class Track extends DBConnection
 
       return $this->get((int)$newId);
     } catch (\PDOException $e) {
-      Logger::logText("Error creating track: ", $e->getMessage());
+      $this->logError("Error creating track: ", $e->getMessage());
       return false;
     }
   }
@@ -180,7 +179,7 @@ class Track extends DBConnection
 
       return $this->get($trackId);
     } catch (\PDOException $e) {
-      Logger::logText("Error updating track {$trackId}: ", $e->getMessage());
+      $this->logError("Error updating track {$trackId}: ", $e->getMessage());
       return false;
     }
   }
@@ -194,7 +193,7 @@ class Track extends DBConnection
       $stmt->bindParam(':trackId', $trackId, \PDO::PARAM_INT);
       return $stmt->execute();
     } catch (\PDOException $e) {
-      Logger::logText("Error deleting track {$trackId}: ", $e->getMessage());
+      $this->logError("Error deleting track {$trackId}: ", $e->getMessage());
       return false;
     }
   }
@@ -232,7 +231,7 @@ class Track extends DBConnection
 
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText("Error getting tracks by composer '{$composer}': ", $e->getMessage());
+      $this->logError("Error getting tracks by composer '{$composer}': ", $e->getMessage());
       return false;
     }
   }
@@ -273,7 +272,7 @@ class Track extends DBConnection
 
       return $tracks;
     } catch (\PDOException $e) {
-      Logger::logText("Error getting tracks for Album ID {$albumId}: ", $e->getMessage());
+      $this->logError("Error getting tracks for Album ID {$albumId}: ", $e->getMessage());
       return false;
     }
   }
@@ -289,7 +288,7 @@ class Track extends DBConnection
       $count = $stmt->fetchColumn();
       return $count > 0;
     } catch (\PDOException $e) {
-      Logger::logText("Error checking tracks for album {$albumId}: ", $e->getMessage());
+      $this->logError("Error checking tracks for album {$albumId}: ", $e->getMessage());
       return false;
     }
   }

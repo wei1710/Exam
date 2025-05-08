@@ -2,14 +2,13 @@
 
 namespace Src\Models;
 
-use Src\DBconnection;
-use Src\Logging\Logger;
+use Src\Models\BaseModel;
 
-class Artist extends DBconnection
+class Artist extends BaseModel
 {
-  public function __construct()
+  public function getTableName(): string
   {
-    parent::__construct();
+    return 'Artist';
   }
 
   public function getAll(): array|false
@@ -25,7 +24,7 @@ class Artist extends DBconnection
       $stmt->execute();
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText("Error getting all artists: ", $e->getMessage());
+      $this->logError("Error getting all artists: ", $e->getMessage());
       return false;
     }
   }
@@ -42,13 +41,13 @@ class Artist extends DBconnection
       $artist = $stmt->fetch(\PDO::FETCH_ASSOC);
 
       if (!$artist) {
-        Logger::logText("Artist with ID {$artistId} not found.");
+        $this->logError("Artist with ID {$artistId} not found.");
         return false;
       }
 
       return $artist;
     } catch (\PDOException $e) {
-      Logger::logText("Error getting artist {$artistId}: ", $e->getMessage());
+      $this->logError("Error getting artist {$artistId}: ", $e->getMessage());
       return false;
     }
   }
@@ -71,7 +70,7 @@ class Artist extends DBconnection
       $artists = $stmt->fetchAll(\PDO::FETCH_ASSOC);
       return $artists;
     } catch (\PDOException $e) {
-      Logger::logText("Error searching for artists by name '{$name}': ", $e->getMessage());
+      $this->logError("Error searching for artists by name '{$name}': ", $e->getMessage());
       return false;
     }
   }
@@ -92,7 +91,7 @@ class Artist extends DBconnection
               'Name' => $name
           ];
       } catch (\PDOException $e) {
-          Logger::logText("Error creating artist: ", $e->getMessage());
+          $this->logError("Error creating artist: ", $e->getMessage());
           return false;
       }
   }
@@ -106,7 +105,7 @@ class Artist extends DBconnection
           $stmt->bindParam(':artistId', $artistId, \PDO::PARAM_INT);
           return $stmt->execute();
       } catch (\PDOException $e) {
-          Logger::logText("Error deleting artist {$artistId}: ", $e->getMessage());
+          $this->logError("Error deleting artist {$artistId}: ", $e->getMessage());
           return false;
       }
   }

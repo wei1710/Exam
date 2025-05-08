@@ -3,15 +3,14 @@
 
 namespace Src\Models;
 
-use Src\DBConnection;
-use Src\Logging\Logger;
+use Src\Models\BaseModel;
 
-class Album extends DBConnection
+class Album extends BaseModel implements IAlbum
 {
 
-  public function __construct()
+  public function getTableName(): string
   {
-    parent::__construct();
+    return 'Album';
   }
 
   public function getAll(): array|false
@@ -36,7 +35,7 @@ class Album extends DBConnection
 
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText('Error getting all albums: ', $e);
+      $this->logError('Error getting all albums: ', $e);
       return false;
     }
   }
@@ -65,12 +64,12 @@ class Album extends DBConnection
       $album = $stmt->fetch(\PDO::FETCH_ASSOC);
 
       if (!$album) {
-        Logger::logText("Album with ID {$albumId} not found.");
+        $this->logError("Album with ID {$albumId} not found.");
         return false;
       }
       return $album;
     } catch (\PDOException $e) {
-      Logger::logText("Error getting album with ID {$albumId}: ", $e->getMessage());
+      $this->logError("Error getting album with ID {$albumId}: ", $e->getMessage());
       return false;
     }
   }
@@ -103,7 +102,7 @@ class Album extends DBConnection
 
       return $albums;
     } catch (\PDOException $e) {
-      Logger::logText("Error getting albums with Title {$title}: ", $e->getMessage());
+      $this->logError("Error getting albums with Title {$title}: ", $e->getMessage());
       return false;
     }
   }
@@ -129,7 +128,7 @@ class Album extends DBConnection
         'ArtistId' => $artistId
       ];
     } catch (\PDOException $e) {
-      Logger::logText("Error creating album: ", $e->getMessage());
+      $this->logError("Error creating album: ", $e->getMessage());
       return false;
     }
   }
@@ -164,7 +163,7 @@ class Album extends DBConnection
 
       return $this->get($albumId);
     } catch (\PDOException $e) {
-      Logger::logText("Error updating album {$albumId}: ", $e->getMessage());
+      $this->logError("Error updating album {$albumId}: ", $e->getMessage());
       return false;
     }
   }
@@ -178,7 +177,7 @@ class Album extends DBConnection
       $stmt->bindParam(':albumId', $albumId, \PDO::PARAM_INT);
       return $stmt->execute();
     } catch (\PDOException $e) {
-      Logger::logText("Error deleting album {$albumId}: ", $e->getMessage());
+      $this->logError("Error deleting album {$albumId}: ", $e->getMessage());
       return false;
     }
   }
@@ -208,7 +207,7 @@ class Album extends DBConnection
 
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
-      Logger::logText("Error getting albums for artist ID {$artistId}: ", $e->getMessage());
+      $this->logError("Error getting albums for artist ID {$artistId}: ", $e->getMessage());
       return false;
     }
   }
@@ -223,7 +222,7 @@ class Album extends DBConnection
       $stmt->execute();
       return $stmt->fetchColumn() > 0;
     } catch (\PDOException $e) {
-      Logger::logText("Error checking albums for artist {$artistId}: ", $e->getMessage());
+      $this->logError("Error checking albums for artist {$artistId}: ", $e->getMessage());
       return false;
     }
   }

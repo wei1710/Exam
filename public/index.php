@@ -3,7 +3,11 @@ header('Content-Type: application/json; charset=UTF-8');
 
 require_once __DIR__ . '/../src/DBConnection.php';
 require_once __DIR__ . '/../src/Logging/Logger.php';
+require_once __DIR__ . '/../src/models/BaseModel.php';
+
+require_once __DIR__ . '/../src/models/IAlbum.php';
 require_once __DIR__ . '/../src/models/Album.php';
+
 require_once __DIR__ . '/../src/models/Track.php';
 require_once __DIR__ . '/../src/models/Artist.php';
 require_once __DIR__ . '/../src/models/Playlist.php';
@@ -11,6 +15,7 @@ require_once __DIR__ . '/../src/models/MediaType.php';
 require_once __DIR__ . '/../src/models/Genre.php';
 
 use Src\models\Album;
+use Src\Models\IAlbum;
 use Src\models\Track;
 use Src\models\Artist;
 use Src\models\Playlist;
