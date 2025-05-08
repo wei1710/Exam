@@ -45,4 +45,25 @@ class Logger
     fwrite($logFile, $text);
     fclose($logFile);
   }
+
+  /**
+   * Logs details about the incoming HTTP request.
+   *
+   * @param string $method The HTTP request method (e.g., GET, POST).
+   * @param string $url The requested URL.
+   * @param string|null $body The raw request body string (optional).
+   */
+  public static function logRequest(string $method, string $url, ?string $body = null): void
+  {
+    $logInfo = ["REQUEST: {$method} {$url}"];
+
+    // Log the raw body string if it exists
+    if ($body !== null && $body !== '') { // Check if body is not null and not empty
+      $logInfo[] = 'JSON Body:';
+      $logInfo[] = $body; // Log the raw string directly
+    }
+
+    // Use the existing logText method to write the formatted request info
+    self::logText(...$logInfo); // Use ... to pass array elements as separate arguments
+  }
 }

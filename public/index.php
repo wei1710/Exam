@@ -1,9 +1,10 @@
 <?php
 header('Content-Type: application/json; charset=UTF-8');
 
+require_once __DIR__ . '/../src/logging/Logger.php';
+
 require_once __DIR__ . '/../src/http/HttpStatusCodes.php';
 
-require_once __DIR__ . '/../src/logging/Logger.php';
 
 require_once __DIR__ . '/../src/DBConnection.php';
 require_once __DIR__ . '/../src/models/BaseModel.php';
@@ -17,6 +18,8 @@ require_once __DIR__ . '/../src/models/Playlist.php';
 require_once __DIR__ . '/../src/models/MediaType.php';
 require_once __DIR__ . '/../src/models/Genre.php';
 
+use Src\Logging\Logger;
+
 use Src\Http\HttpStatusCodes;
 
 use Src\models\Album;
@@ -27,6 +30,14 @@ use Src\models\MediaType;
 use Src\models\Genre;
 
 $method = $_SERVER['REQUEST_METHOD'];
+$url = $_SERVER['REQUEST_URI'];
+$body = null;
+
+if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
+  $body = file_get_contents('php://input');
+}
+
+Logger::logRequest($method, $url, $body);
 
 // Parse the URL path
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); // get /exam/albums or /exam/albums/5 or /exam/albums?s=...
