@@ -2,10 +2,6 @@
 
 namespace Src\Logging;
 
-/**
- * Logs information to a daily log file (safe against XSS).
- * Use this to debug requests, data, or errors.
- */
 class Logger
 {
   private const LOG_DIRECTORY = __DIR__ . '/../log';
