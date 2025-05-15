@@ -55,3 +55,5 @@ class DBCredentials
         return $this->password;
     }
 }
+
+?>
