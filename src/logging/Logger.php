@@ -3,67 +3,66 @@
 namespace Src\Logging;
 
 /**
- * Logs the information it receives as a parameter to a log file in the log folder.
- * @param $info An undefined series of strings or arrays to log
+ * Logs information to a daily log file (safe against XSS).
+ * Use this to debug requests, data, or errors.
  */
-
 class Logger
 {
   private const LOG_DIRECTORY = __DIR__ . '/../log';
 
+  /**
+   * Escapes text to prevent XSS if viewing logs in browser.
+   */
+  private static function escape(string $text): string
+  {
+    return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+  }
+
+  /**
+   * Logs text or arrays to a .log file with timestamp and source.
+   */
   public static function logText(string|array ...$info): void
   {
-    $logFileName = Logger::LOG_DIRECTORY . '/log' . date('Ymd') . '.htm';
+    $logFileName = self::LOG_DIRECTORY . '/log' . date('Ymd') . '.log';
 
-    // If the logging directory does not exist, it is created
+    // Ensure logging directory exists
     if (!is_dir(self::LOG_DIRECTORY)) {
-      if (!mkdir(self::LOG_DIRECTORY)) {
+      if (!mkdir(self::LOG_DIRECTORY, 0777, true)) {
         return;
       }
     }
 
-    $text = '';
-    if (!file_exists($logFileName)) {
-      $text .= '<pre>';
-    }
-    $text .= '--- ' . date('Y-m-d h:i:s A', time()) . ' ---<br>';
+    $text = '--- ' . date('Y-m-d h:i:s A') . " ---\n";
 
-    // The name of the invoking file is displayed
     if (count($bt = debug_backtrace()) > 1) {
-      $text .= 'FILE ' . $bt[1]['file'] . '<br>';
-    };
+      $text .= 'FILE: ' . $bt[1]['file'] . "\n";
+    }
 
     foreach ($info as $pieceOfInfo) {
-      if (gettype($pieceOfInfo) === 'array') {
-        $text .= print_r($pieceOfInfo, true);
+      if (is_array($pieceOfInfo)) {
+        $text .= self::escape(print_r($pieceOfInfo, true)) . "\n";
       } else {
-        $text .= $pieceOfInfo . '<br>';
+        $text .= self::escape($pieceOfInfo) . "\n";
       }
     }
 
-    $logFile = fopen($logFileName, 'a');
-    fwrite($logFile, $text);
-    fclose($logFile);
+    file_put_contents($logFileName, $text, FILE_APPEND);
   }
 
   /**
-   * Logs details about the incoming HTTP request.
-   *
-   * @param string $method The HTTP request method (e.g., GET, POST).
-   * @param string $url The requested URL.
-   * @param string|null $body The raw request body string (optional).
+   * Logs incoming HTTP requests (method, URL, body).
    */
   public static function logRequest(string $method, string $url, ?string $body = null): void
   {
     $logInfo = ["REQUEST: {$method} {$url}"];
 
-    // Log the raw body string if it exists
-    if ($body !== null && $body !== '') { // Check if body is not null and not empty
+    if (!empty($body)) {
       $logInfo[] = 'JSON Body:';
-      $logInfo[] = $body; // Log the raw string directly
+      $logInfo[] = $body;
     }
 
-    // Use the existing logText method to write the formatted request info
-    self::logText(...$logInfo); // Use ... to pass array elements as separate arguments
+    self::logText(...$logInfo);
   }
 }
+
+?>

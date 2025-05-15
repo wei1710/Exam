@@ -4,6 +4,7 @@
 namespace Src\Models;
 
 use Src\Models\BaseModel;
+use Src\Models\Interfaces\IAlbum;
 
 class Album extends BaseModel implements IAlbum
 {
@@ -107,6 +108,51 @@ class Album extends BaseModel implements IAlbum
     }
   }
 
+  public function getByArtistId(int $artistId): array|false
+  {
+    $sql = <<<SQL
+            SELECT
+                Album.AlbumId,
+                Album.Title,
+                Album.ArtistId,
+                Artist.Name AS ArtistName
+            FROM
+                Album
+            INNER JOIN
+                Artist ON Album.ArtistId = Artist.ArtistId
+            WHERE
+                Album.ArtistId = :artistId
+            ORDER BY
+                Album.Title
+        SQL;
+
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->bindParam(':artistId', $artistId, \PDO::PARAM_INT);
+      $stmt->execute();
+
+      return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    } catch (\PDOException $e) {
+      $this->logError("Error getting albums for artist ID {$artistId}: ", $e->getMessage());
+      return false;
+    }
+  }
+
+  public function hasAlbums(int $artistId): bool
+  {
+    $sql = "SELECT COUNT(*) FROM Album WHERE ArtistId = :artistId";
+
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->bindParam(':artistId', $artistId, \PDO::PARAM_INT);
+      $stmt->execute();
+      return $stmt->fetchColumn() > 0;
+    } catch (\PDOException $e) {
+      $this->logError("Error checking albums for artist {$artistId}: ", $e->getMessage());
+      return false;
+    }
+  }
+
   public function create(string $title, int $artistId): array|false
   {
     $sql = <<<SQL
@@ -181,49 +227,6 @@ class Album extends BaseModel implements IAlbum
       return false;
     }
   }
-
-  public function getByArtistId(int $artistId): array|false
-  {
-    $sql = <<<SQL
-            SELECT
-                Album.AlbumId,
-                Album.Title,
-                Album.ArtistId,
-                Artist.Name AS ArtistName
-            FROM
-                Album
-            INNER JOIN
-                Artist ON Album.ArtistId = Artist.ArtistId
-            WHERE
-                Album.ArtistId = :artistId
-            ORDER BY
-                Album.Title
-        SQL;
-
-    try {
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->bindParam(':artistId', $artistId, \PDO::PARAM_INT);
-      $stmt->execute();
-
-      return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    } catch (\PDOException $e) {
-      $this->logError("Error getting albums for artist ID {$artistId}: ", $e->getMessage());
-      return false;
-    }
-  }
-
-  public function hasAlbums(int $artistId): bool
-  {
-    $sql = "SELECT COUNT(*) FROM Album WHERE ArtistId = :artistId";
-
-    try {
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->bindParam(':artistId', $artistId, \PDO::PARAM_INT);
-      $stmt->execute();
-      return $stmt->fetchColumn() > 0;
-    } catch (\PDOException $e) {
-      $this->logError("Error checking albums for artist {$artistId}: ", $e->getMessage());
-      return false;
-    }
-  }
 }
+
+?>

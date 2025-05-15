@@ -4,8 +4,9 @@
 namespace Src\Models;
 
 use Src\Models\BaseModel;
+use Src\Models\Interfaces\ITrack;
 
-class Track extends BaseModel
+class Track extends BaseModel implements ITrack
 {
   public function getTableName(): string
   {
@@ -74,9 +75,7 @@ class Track extends BaseModel
             INNER JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
             INNER JOIN Genre ON Track.GenreId = Genre.GenreId
             WHERE
-                Track.Name LIKE :search
-                OR MediaType.Name LIKE :search
-                OR Genre.Name LIKE :search
+                Track.Name LIKE :nameSearch
             ORDER BY
                 Track.Name
         SQL;
@@ -84,12 +83,107 @@ class Track extends BaseModel
     try {
       $stmt = $this->pdo->prepare($sql);
       $like = '%' . $searchText . '%';
-      $stmt->bindParam(':search', $like, \PDO::PARAM_STR);
+      $stmt->bindParam(':nameSearch', $like, \PDO::PARAM_STR);
       $stmt->execute();
 
       return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
       $this->logError("Error searching tracks: ", $e->getMessage());
+      return false;
+    }
+  }
+
+  public function getByComposer(string $composer): array|false
+  {
+    $sql = <<<SQL
+            SELECT
+                Track.TrackId,
+                Track.Name,
+                Track.AlbumId,
+                Track.MediaTypeId,
+                MediaType.Name AS MediaTypeName,
+                Track.GenreId,
+                Genre.Name AS GenreName,
+                Track.Composer,
+                Track.Milliseconds,
+                Track.Bytes,
+                Track.UnitPrice
+            FROM
+                Track
+            INNER JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
+            INNER JOIN Genre ON Track.GenreId = Genre.GenreId
+            WHERE
+                Track.Composer LIKE :composer
+            ORDER BY
+                Track.Name
+        SQL;
+
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $like = '%' . $composer . '%';
+      $stmt->bindParam(':composer', $like, \PDO::PARAM_STR);
+      $stmt->execute();
+
+      return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    } catch (\PDOException $e) {
+      $this->logError("Error getting tracks by composer '{$composer}': ", $e->getMessage());
+      return false;
+    }
+  }
+
+  public function getTracksByAlbumId(int $albumId): array|false
+  {
+    $sql = <<<SQL
+        SELECT
+            Track.TrackId,
+            Track.Name,
+            Track.AlbumId,
+            Track.MediaTypeId,
+            MediaType.Name AS MediaTypeName,
+            Track.GenreId,
+            Genre.Name AS GenreName,
+            Track.Composer,
+            Track.Milliseconds,
+            Track.Bytes,
+            Track.UnitPrice
+        FROM
+            Track
+        INNER JOIN
+            MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
+        INNER JOIN
+            Genre ON Track.GenreId = Genre.GenreId
+        WHERE
+            Track.AlbumId = :albumId
+        ORDER BY
+            Track.Name
+      SQL;
+
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->bindParam(':albumId', $albumId, \PDO::PARAM_INT);
+      $stmt->execute();
+
+      $tracks = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+      return $tracks;
+    } catch (\PDOException $e) {
+      $this->logError("Error getting tracks for Album ID {$albumId}: ", $e->getMessage());
+      return false;
+    }
+  }
+
+  public function hasTracks(int $albumId): bool
+  {
+    $sql = "SELECT COUNT(*) FROM Track WHERE AlbumId = :albumId";
+
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->bindParam(':albumId', $albumId, \PDO::PARAM_INT);
+      $stmt->execute();
+      $count = $stmt->fetchColumn();
+      return $count > 0;
+    } catch (\PDOException $e) {
+      $this->logError("Error checking tracks for album {$albumId}: ", $e->getMessage());
       return false;
     }
   }
@@ -197,99 +291,6 @@ class Track extends BaseModel
       return false;
     }
   }
-
-  public function getByComposer(string $composer): array|false
-  {
-    $sql = <<<SQL
-            SELECT
-                Track.TrackId,
-                Track.Name,
-                Track.AlbumId,
-                Track.MediaTypeId,
-                MediaType.Name AS MediaTypeName,
-                Track.GenreId,
-                Genre.Name AS GenreName,
-                Track.Composer,
-                Track.Milliseconds,
-                Track.Bytes,
-                Track.UnitPrice
-            FROM
-                Track
-            INNER JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
-            INNER JOIN Genre ON Track.GenreId = Genre.GenreId
-            WHERE
-                Track.Composer LIKE :composer
-            ORDER BY
-                Track.Name
-        SQL;
-
-    try {
-      $stmt = $this->pdo->prepare($sql);
-      $like = '%' . $composer . '%';
-      $stmt->bindParam(':composer', $like, \PDO::PARAM_STR);
-      $stmt->execute();
-
-      return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    } catch (\PDOException $e) {
-      $this->logError("Error getting tracks by composer '{$composer}': ", $e->getMessage());
-      return false;
-    }
-  }
-
-  public function getTracksByAlbumId(int $albumId): array|false
-  {
-    $sql = <<<SQL
-        SELECT
-            Track.TrackId,
-            Track.Name,
-            Track.AlbumId,
-            Track.MediaTypeId,
-            MediaType.Name AS MediaTypeName,
-            Track.GenreId,
-            Genre.Name AS GenreName,
-            Track.Composer,
-            Track.Milliseconds,
-            Track.Bytes,
-            Track.UnitPrice
-        FROM
-            Track
-        INNER JOIN
-            MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
-        INNER JOIN
-            Genre ON Track.GenreId = Genre.GenreId
-        WHERE
-            Track.AlbumId = :albumId
-        ORDER BY
-            Track.Name
-      SQL;
-
-    try {
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->bindParam(':albumId', $albumId, \PDO::PARAM_INT);
-      $stmt->execute();
-
-      $tracks = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-      return $tracks;
-    } catch (\PDOException $e) {
-      $this->logError("Error getting tracks for Album ID {$albumId}: ", $e->getMessage());
-      return false;
-    }
-  }
-
-  public function hasTracks(int $albumId): bool
-  {
-    $sql = "SELECT COUNT(*) FROM Track WHERE AlbumId = :albumId";
-
-    try {
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->bindParam(':albumId', $albumId, \PDO::PARAM_INT);
-      $stmt->execute();
-      $count = $stmt->fetchColumn();
-      return $count > 0;
-    } catch (\PDOException $e) {
-      $this->logError("Error checking tracks for album {$albumId}: ", $e->getMessage());
-      return false;
-    }
-  }
 }
+
+?>

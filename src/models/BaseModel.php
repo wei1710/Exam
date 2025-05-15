@@ -13,15 +13,17 @@ abstract class BaseModel extends DBConnection
     }
 
     protected function logError(string $message, $errorMessage = null): void
-      {
-          $logMessage = $message;
+    {
+        $logMessage = $message;
 
-          if ($errorMessage) {
-              $logMessage .= ' - ' . $errorMessage;
-          }
+        if ($errorMessage) {
+            $logMessage .= ' - ' . $errorMessage;
+        }
 
-          Logger::logText($logMessage);
-      }
+        Logger::logText($logMessage);
+    }
 
     abstract public function getTableName(): string;
 }
+
+?>

@@ -3,8 +3,9 @@
 namespace Src\Models;
 
 use Src\Models\BaseModel;
+use Src\Models\Interfaces\IArtist;
 
-class Artist extends BaseModel
+class Artist extends BaseModel implements IArtist
 {
   public function getTableName(): string
   {
@@ -110,3 +111,4 @@ class Artist extends BaseModel
       }
   }
 }
+?>
