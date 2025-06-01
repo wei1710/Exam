@@ -1,8 +1,10 @@
 <?php
 
 namespace Src\Models\Interfaces;
-Interface IMediaType {
-  public function getAll(): array|false;
+
+interface IMediaType
+{
+    public function getAll(): array|false;
 }
 
 ?>

@@ -33,28 +33,28 @@ class Playlist extends BaseModel implements IPlaylist
     public function get(int $playlistId): array|false
     {
         $sql = <<<SQL
-          SELECT
-              Playlist.PlaylistId,
-              Playlist.Name AS PlaylistName,
-              Track.TrackId,
-              Track.Name AS TrackName,
-              Track.AlbumId,
-              Track.MediaTypeId,
-              MediaType.Name AS MediaTypeName,
-              Track.GenreId,
-              Genre.Name AS GenreName,
-              Track.Composer,
-              Track.Milliseconds,
-              Track.Bytes,
-              Track.UnitPrice
-          FROM Playlist
-          LEFT JOIN PlaylistTrack ON Playlist.PlaylistId = PlaylistTrack.PlaylistId
-          LEFT JOIN Track ON PlaylistTrack.TrackId = Track.TrackId
-          LEFT JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
-          LEFT JOIN Genre ON Track.GenreId = Genre.GenreId
-          WHERE Playlist.PlaylistId = :playlistId
-          ORDER BY Track.Name
-      SQL;
+            SELECT
+                Playlist.PlaylistId,
+                Playlist.Name AS PlaylistName,
+                Track.TrackId,
+                Track.Name AS TrackName,
+                Track.AlbumId,
+                Track.MediaTypeId,
+                MediaType.Name AS MediaTypeName,
+                Track.GenreId,
+                Genre.Name AS GenreName,
+                Track.Composer,
+                Track.Milliseconds,
+                Track.Bytes,
+                Track.UnitPrice
+            FROM Playlist
+            LEFT JOIN PlaylistTrack ON Playlist.PlaylistId = PlaylistTrack.PlaylistId
+            LEFT JOIN Track ON PlaylistTrack.TrackId = Track.TrackId
+            LEFT JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId
+            LEFT JOIN Genre ON Track.GenreId = Genre.GenreId
+            WHERE Playlist.PlaylistId = :playlistId
+            ORDER BY Track.Name
+        SQL;
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -100,11 +100,11 @@ class Playlist extends BaseModel implements IPlaylist
     public function search(string $name): array|false
     {
         $sql = <<<SQL
-          SELECT PlaylistId, Name
-          FROM Playlist
-          WHERE Name LIKE :name
-          ORDER BY Name
-      SQL;
+            SELECT PlaylistId, Name
+            FROM Playlist
+            WHERE Name LIKE :name
+            ORDER BY Name
+        SQL;
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -153,9 +153,9 @@ class Playlist extends BaseModel implements IPlaylist
     public function create(string $name): array|false
     {
         $sql = <<<SQL
-          INSERT INTO Playlist (Name)
-          VALUES (:name)
-      SQL;
+            INSERT INTO Playlist (Name)
+            VALUES (:name)
+        SQL;
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -178,9 +178,9 @@ class Playlist extends BaseModel implements IPlaylist
     public function addTrack(int $playlistId, int $trackId): bool
     {
         $sql = <<<SQL
-          INSERT INTO PlaylistTrack (PlaylistId, TrackId)
-          VALUES (:playlistId, :trackId)
-      SQL;
+            INSERT INTO PlaylistTrack (PlaylistId, TrackId)
+            VALUES (:playlistId, :trackId)
+        SQL;
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -196,9 +196,9 @@ class Playlist extends BaseModel implements IPlaylist
     public function removeTrack(int $playlistId, int $trackId): bool
     {
         $sql = <<<SQL
-          DELETE FROM PlaylistTrack
-          WHERE PlaylistId = :playlistId AND TrackId = :trackId
-      SQL;
+            DELETE FROM PlaylistTrack
+            WHERE PlaylistId = :playlistId AND TrackId = :trackId
+        SQL;
 
         try {
             $stmt = $this->pdo->prepare($sql);

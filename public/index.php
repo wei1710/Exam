@@ -49,9 +49,8 @@ if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
 
 Logger::logRequest($method, $url, $body);
 
-// Parse the URL path
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); 
-$path = trim($path, '/'); 
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$path = trim($path, '/');
 $parts = explode('/', $path);
 
 if (!empty($parts) && $parts[0] === 'exam') {
@@ -92,7 +91,8 @@ switch ($resource) {
         break;
 }
 
-function sanitizeText(string $value): string {
+function sanitizeText(string $value): string
+{
     return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
 }
 
@@ -223,9 +223,7 @@ function handleArtist(string $method, array $parts): void
     }
 }
 
-/**
- * Handle /albums endpoints
- */
+
 function handleAlbum(string $method, array $parts): void
 {
     $albumModel = new Album();
@@ -592,7 +590,7 @@ function handlePlaylist(string $method, array $parts): void
 {
     $playlistModel = new Playlist();
 
-    // POST /playlists → Create playlist
+    // POST /playlists -> Create playlist
     if ($method === 'POST' && empty($parts)) {
         $input = json_decode(file_get_contents('php://input'), true);
 
@@ -614,7 +612,7 @@ function handlePlaylist(string $method, array $parts): void
         return;
     }
 
-    // POST /playlists/{id}/tracks → Assign track to playlist
+    // POST /playlists/{id}/tracks -> Assign track to playlist
     if ($method === 'POST' && count($parts) === 2 && is_numeric($parts[0]) && $parts[1] === 'tracks') {
         $playlistId = (int)$parts[0];
         $input = json_decode(file_get_contents('php://input'), true);
@@ -638,7 +636,7 @@ function handlePlaylist(string $method, array $parts): void
         return;
     }
 
-    // GET /playlists/{id} → One playlist with tracks
+    // GET /playlists/{id} -> One playlist with tracks
     if ($method === 'GET' && count($parts) === 1 && is_numeric($parts[0])) {
         $playlistId = (int)$parts[0];
         $playlist = $playlistModel->get($playlistId);
@@ -653,7 +651,7 @@ function handlePlaylist(string $method, array $parts): void
         return;
     }
 
-    // GET /playlists?s=... → Search playlists
+    // GET /playlists?s=... -> Search playlists
     if ($method === 'GET' && isset($_GET['s']) && empty($parts)) {
         $searchQuery = $_GET['s'];
         $playlists = $playlistModel->search($searchQuery);
@@ -668,7 +666,7 @@ function handlePlaylist(string $method, array $parts): void
         return;
     }
 
-    // GET /playlists → All playlists
+    // GET /playlists -> All playlists
     if ($method === 'GET' && empty($parts)) {
         $playlists = $playlistModel->getAll();
 

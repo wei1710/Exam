@@ -1,8 +1,10 @@
 <?php
 
 namespace Src\Models\Interfaces;
-Interface IGenre {
-  public function getAll(): array|false;
+
+interface IGenre
+{
+    public function getAll(): array|false;
 }
 
 ?>
